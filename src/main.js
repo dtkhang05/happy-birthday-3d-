@@ -23,6 +23,7 @@ import {
   createVignette,
 } from './effects.js'
 import { runCinematic } from './animations.js'
+import { setupDecorations } from './decorations.js'
 
 async function main() {
   const app = document.getElementById('app')
@@ -97,6 +98,9 @@ async function main() {
   // ── Environment ──────────────────────────────────────────────────
   const env = setupEnvironment(scene)
   env.setCandlePosition(candlePosition)
+
+  // ── Scene Decorations (outer rings, revealed in Phase 2) ─────────
+  const decorations = setupDecorations(scene)
 
   // ── Spark ────────────────────────────────────────────────────────
   const spark = createSpark(scene)
@@ -278,6 +282,9 @@ async function main() {
       explosionUpdaters,
       frDuration,
       onRevealComplete: () => {
+        // Reveal scene decorations
+        decorations.reveal()
+
         // Fade in hpbd.mp3 over 1 second after reveal completes
         if (hpbdAudio.buffer) {
           hpbdAudio.play()
@@ -345,6 +352,7 @@ async function main() {
     if (!phase1Active) {
       env.updateCandleFlicker(time)
       env.updateBalloons(time)
+      decorations.update(time)
     }
 
     // Birthday text billboard + float
