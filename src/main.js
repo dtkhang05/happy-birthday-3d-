@@ -132,20 +132,50 @@ async function main() {
   // (handled in the render loop below)
 
   // ── UI click handler ─────────────────────────────────────────────
-  ui.onReady(async () => {
+  ui.onReady(() => {
     phase1Active = false
 
-    // Play ignition sound IMMEDIATELY on click — no delay
-    // Audio buffer is already preloaded (loaded in main() before UI setup)
+    // ── PLAY SOUND + LAUNCH FIREBALL ON THE SAME FRAME ─────
+    // Play ignition sound IMMEDIATELY on click (buffer preloaded)
     try {
       if (frAudio.buffer) {
         frAudio.play()
       }
     } catch (e) {
-      console.warn('Could not play fr.wav immediately:', e)
+      console.warn('Could not play fr.wav:', e)
     }
 
-    // Get the button element
+    // Position the spark at the button's world position
+    const forward = new THREE.Vector3()
+    camera.getWorldDirection(forward)
+    const sparkStartPos = new THREE.Vector3()
+    sparkStartPos.copy(camera.position).addScaledVector(forward, 4)
+    sparkStartPos.y += 0.2
+
+    // Activate spark immediately — no delays
+    const sparkInitDir = new THREE.Vector3().copy(candlePosition).sub(sparkStartPos).normalize()
+    spark.activate(sparkStartPos, sparkInitDir)
+    spark.setScale(2.0)
+    spark.mesh.material.color.setHex(0xff4400)
+    spark.light.color.setHex(0xff4400)
+    spark.light.intensity = 4
+
+    // Fire burst scale animation (visual only, runs in parallel — no onComplete)
+    gsap.to(spark.mesh.scale, {
+      x: 3.0, y: 3.0, z: 3.0,
+      duration: 0.15,
+      ease: 'power2.out',
+    })
+    gsap.to(spark.mesh.scale, {
+      x: 1.0, y: 1.0, z: 1.0,
+      duration: 0.2,
+      ease: 'power2.in',
+      delay: 0.15,
+    })
+    spark.setColor(0xff8800, 0.15)
+    spark.setColor(0xffdd44, 0.2)
+
+    // ── UI ANIMATIONS (non-blocking, run in parallel with fireball) ──
     const btn = document.getElementById('ready-btn')
     const card = btn?.closest('.ui-card')
     const heading = card?.querySelector('.ui-heading')
@@ -155,114 +185,29 @@ async function main() {
     const btnRadial = btn?.querySelector('.btn-radial')
     const sparkles = btn?.querySelectorAll('.sparkle')
 
-    // ── Step 1 (0~0.3s): Fade out text elements ───────────────────
     if (eyebrow) gsap.to(eyebrow, { opacity: 0, duration: 0.3, ease: 'power2.out' })
     if (heading) gsap.to(heading, { opacity: 0, duration: 0.3, ease: 'power2.out' })
     if (hint) gsap.to(hint, { opacity: 0, duration: 0.3, ease: 'power2.out' })
     if (sparkles) sparkles.forEach(s => gsap.to(s, { opacity: 0, duration: 0.2 }))
 
-    // Wait for text to fade
-    await new Promise(resolve => setTimeout(resolve, 300))
-
-    // ── Step 2 (0.3~0.8s): READY text melts into ember ─────────────
+    // READY text melts into ember (visual only)
     if (btnLabel) {
-      // Compress letters inward
-      gsap.to(btnLabel, {
-        letterSpacing: '0em',
-        scale: 0.3,
-        duration: 0.3,
-        ease: 'power2.in',
-      })
-      // White -> orange -> bright yellow
-      gsap.to(btnLabel, {
-        color: 'rgb(255, 150, 50)',
-        duration: 0.2,
-        ease: 'power2.in',
-      })
-      gsap.to(btnLabel, {
-        color: 'rgb(255, 220, 80)',
-        duration: 0.2,
-        delay: 0.2,
-        ease: 'power2.in',
-      })
-      // Fade the text into the ember
-      gsap.to(btnLabel, {
-        opacity: 0,
-        duration: 0.2,
-        delay: 0.4,
-        ease: 'power2.in',
-      })
+      gsap.to(btnLabel, { letterSpacing: '0em', scale: 0.3, duration: 0.3, ease: 'power2.in' })
+      gsap.to(btnLabel, { color: 'rgb(255, 150, 50)', duration: 0.2, ease: 'power2.in' })
+      gsap.to(btnLabel, { color: 'rgb(255, 220, 80)', duration: 0.2, delay: 0.2, ease: 'power2.in' })
+      gsap.to(btnLabel, { opacity: 0, duration: 0.2, delay: 0.4, ease: 'power2.in' })
     }
 
-    // Wait for melt
-    await new Promise(resolve => setTimeout(resolve, 500))
-
-    // ── Step 3 (0.8~1.2s): Ember ignites into fire burst ───────────
-    // Position the spark at the button's world position
-    const forward = new THREE.Vector3()
-    camera.getWorldDirection(forward)
-    const sparkStartPos = new THREE.Vector3()
-    sparkStartPos.copy(camera.position).addScaledVector(forward, 4)
-    sparkStartPos.y += 0.2
-
-    // Activate spark as a small ember (not huge)
-    // Set initial direction toward the candle so the tail trails correctly
-    const sparkInitDir = new THREE.Vector3().copy(candlePosition).sub(sparkStartPos).normalize()
-    spark.activate(sparkStartPos, sparkInitDir)
-    spark.setScale(2.0) // Small ember, not a huge ball
-    spark.mesh.material.color.setHex(0xff4400)
-    spark.light.color.setHex(0xff4400)
-    spark.light.intensity = 4
-
-    // Fire burst: grow slightly then settle into comet
-    gsap.to(spark.mesh.scale, {
-      x: 3.0, y: 3.0, z: 3.0,
-      duration: 0.15,
-      ease: 'power2.out',
-      onComplete: () => {
-        // Shrink into comet
-        gsap.to(spark.mesh.scale, {
-          x: 1.0, y: 1.0, z: 1.0,
-          duration: 0.2,
-          ease: 'power2.in',
-        })
-      },
-    })
-    // Color: red -> orange -> yellow during burst
-    spark.setColor(0xff8800, 0.15)
-    setTimeout(() => spark.setColor(0xffdd44, 0.2), 150)
-
-    // Fade out button and overlay
+    // Fade out button and overlay (no onComplete — runs in parallel with flight)
     if (btn) {
-      gsap.to(btn, {
-        opacity: 0,
-        scale: 0.5,
-        duration: 0.3,
-        ease: 'power2.in',
-        onComplete: () => { btn.style.display = 'none' },
-      })
+      gsap.to(btn, { opacity: 0, scale: 0.5, duration: 0.3, ease: 'power2.in' })
     }
     if (btnRadial) gsap.to(btnRadial, { opacity: 0, duration: 0.2 })
     gsap.to(document.getElementById('ui-overlay'), {
-      opacity: 0,
-      duration: 0.3,
-      ease: 'power2.in',
-      onComplete: () => {
-        const overlay = document.getElementById('ui-overlay')
-        if (overlay) {
-          overlay.style.pointerEvents = 'none'
-          overlay.style.display = 'none'
-        }
-      },
+      opacity: 0, duration: 0.3, ease: 'power2.in',
     })
 
-    // Wait for burst
-    await new Promise(resolve => setTimeout(resolve, 350))
-
-    // ── Step 4: Comet begins moving toward candle ──────────────────
-    // (Audio already played at click start — no delay)
-
-    // Run the cinematic — the spark is already active as a small comet
+    // ── FIREBALL CINEMATIC STARTS ON THE SAME FRAME ─────────
     runCinematic({
       scene,
       camera,

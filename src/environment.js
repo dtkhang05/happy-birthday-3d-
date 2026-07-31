@@ -4,6 +4,122 @@
 import * as THREE from 'three'
 import gsap from 'gsap'
 
+// ── Teddy Bear (shared with decorations.js so it can sit on the inner U) ─────
+const teddyCreamMat = new THREE.MeshStandardMaterial({ color: 0xfff5e6, roughness: 0.85, metalness: 0.0 })
+const teddyBeigeMat = new THREE.MeshStandardMaterial({ color: 0xf5f5dc, roughness: 0.9 })
+const teddyDarkBrownMat = new THREE.MeshStandardMaterial({ color: 0x4a3728, roughness: 0.7 })
+const teddyPinkMat = new THREE.MeshStandardMaterial({ color: 0xffb6c1, roughness: 0.6 })
+
+export function createTeddyBear(x, z, rotY) {
+  const group = new THREE.Group()
+
+  // Body (sitting pose - wider, shorter)
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.5, 20, 20), teddyCreamMat)
+  body.scale.set(1.1, 0.9, 0.9)
+  body.position.y = 0.35
+
+  // Tummy patch
+  const tummy = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), teddyBeigeMat)
+  tummy.scale.set(1.0, 0.7, 0.6)
+  tummy.position.set(0, 0.3, 0.35)
+  group.add(tummy)
+
+  // Head (slightly larger)
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 20, 20), teddyCreamMat)
+  head.position.set(0, 0.95, 0.05)
+
+  // Ears (round, cute)
+  const earGeo = new THREE.SphereGeometry(0.15, 16, 16)
+  const earL = new THREE.Mesh(earGeo, teddyCreamMat)
+  earL.position.set(-0.3, 1.2, 0.05)
+  const earR = new THREE.Mesh(earGeo, teddyCreamMat)
+  earR.position.set(0.3, 1.2, 0.05)
+  // Inner ears
+  const innerEarGeo = new THREE.SphereGeometry(0.08, 12, 12)
+  const innerEarL = new THREE.Mesh(innerEarGeo, teddyPinkMat)
+  innerEarL.position.set(-0.3, 1.18, 0.12)
+  const innerEarR = new THREE.Mesh(innerEarGeo, teddyPinkMat)
+  innerEarR.position.set(0.3, 1.18, 0.12)
+
+  // Snout (cute, slightly protruding)
+  const snout = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), teddyBeigeMat)
+  snout.position.set(0, 0.88, 0.35)
+  snout.scale.set(1.1, 0.8, 0.9)
+
+  // Nose (small dark triangle)
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), teddyDarkBrownMat)
+  nose.position.set(0, 0.92, 0.45)
+  nose.scale.set(1, 0.8, 0.8)
+
+  // Eyes (dark, shiny)
+  const eyeGeo = new THREE.SphereGeometry(0.05, 8, 8)
+  const eyeMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.2, metalness: 0.3 })
+  const eyeL = new THREE.Mesh(eyeGeo, eyeMat)
+  eyeL.position.set(-0.15, 0.98, 0.32)
+  const eyeR = new THREE.Mesh(eyeGeo, eyeMat)
+  eyeR.position.set(0.15, 0.98, 0.32)
+  // Eye shine
+  const shineGeo = new THREE.SphereGeometry(0.015, 6, 6)
+  const shineMat = new THREE.MeshBasicMaterial({ color: 0xffffff })
+  const shineL = new THREE.Mesh(shineGeo, shineMat)
+  shineL.position.set(-0.12, 1.0, 0.36)
+  const shineR = new THREE.Mesh(shineGeo, shineMat)
+  shineR.position.set(0.18, 1.0, 0.36)
+
+  // Arms (sitting pose - resting on lap)
+  const armGeo = new THREE.CapsuleGeometry(0.13, 0.25, 12, 12)
+  const armL = new THREE.Mesh(armGeo, teddyCreamMat)
+  armL.position.set(-0.45, 0.5, 0.2)
+  armL.rotation.z = 0.3
+  armL.rotation.x = 0.8
+  const armR = new THREE.Mesh(armGeo, teddyCreamMat)
+  armR.position.set(0.45, 0.5, 0.2)
+  armR.rotation.z = -0.3
+  armR.rotation.x = 0.8
+
+  // Legs (sitting pose - extended forward)
+  const legGeo = new THREE.CapsuleGeometry(0.15, 0.2, 12, 12)
+  const legL = new THREE.Mesh(legGeo, teddyCreamMat)
+  legL.position.set(-0.3, 0.15, 0.45)
+  legL.rotation.x = -0.5
+  legL.rotation.z = 0.2
+  const legR = new THREE.Mesh(legGeo, teddyCreamMat)
+  legR.position.set(0.3, 0.15, 0.45)
+  legR.rotation.x = -0.5
+  legR.rotation.z = -0.2
+  // Paw pads
+  const padGeo = new THREE.SphereGeometry(0.05, 8, 8)
+  const padMat = new THREE.MeshStandardMaterial({ color: 0xffd1dc, roughness: 0.7 })
+  const padL = new THREE.Mesh(padGeo, padMat)
+  padL.position.set(-0.3, 0.08, 0.6)
+  padL.scale.set(1, 0.5, 0.8)
+  const padR = new THREE.Mesh(padGeo, padMat)
+  padR.position.set(0.3, 0.08, 0.6)
+  padR.scale.set(1, 0.5, 0.8)
+
+  // Small ribbon bow tie
+  const bowGeo = new THREE.BoxGeometry(0.2, 0.06, 0.06)
+  const bowMat = new THREE.MeshStandardMaterial({ color: 0xff6b8a, roughness: 0.4 })
+  const bow = new THREE.Mesh(bowGeo, bowMat)
+  bow.position.set(0, 0.65, 0.35)
+  const bowL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 0.04), bowMat)
+  bowL.position.set(-0.12, 0.65, 0.35)
+  bowL.rotation.z = 0.3
+  const bowR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 0.04), bowMat)
+  bowR.position.set(0.12, 0.65, 0.35)
+  bowR.rotation.z = -0.3
+
+  group.add(body, head, earL, earR, innerEarL, innerEarR)
+  group.add(snout, nose, eyeL, eyeR, shineL, shineR)
+  group.add(armL, armR, legL, legR, padL, padR)
+  group.add(bow, bowL, bowR)
+
+  group.userData = { targetY: 0 }
+  group.position.set(x, -5, z)
+  group.rotation.y = rotY
+  return group
+}
+
 export function setupEnvironment(scene) {
   // ═══════════════════════════════════════════════════════
   // LIGHTS
@@ -139,29 +255,33 @@ export function setupEnvironment(scene) {
 // ── Decorations builder ────────────────────────────────────────────────────────
 function buildDecorations(scene, PARTY_COLORS) {
   const balloons = []
-  const gifts = []
-  const feminineItems = []
   
   const balloonGeo = new THREE.SphereGeometry(1, 32, 32)
   const knotGeo = new THREE.CylinderGeometry(0.1, 0.2, 0.3, 8)
   
-  // 1. Balloon clusters around edges (moved closer)
-  const clusterCenters = [
-    { x: -4.5, z: -3 }, { x: 4.5, z: -2.5 },
-    { x: -5, z: 1.5 }, { x: 5, z: 2 },
-  ]
-  
-  clusterCenters.forEach((center) => {
+  // 1. Balloon clusters — scattered around the outer decoration ring (6.9m),
+  // with a ±35° wedge in front of the camera (+Z) kept clear for the front
+  // cluster. The cluster nearest the mini fan is skipped entirely.
+  const outerRadius = 6.9
+  const frontClearHalf = THREE.MathUtils.degToRad(35)
+  const frontCenter = Math.PI / 2 // +Z axis
+  const arcStart = frontCenter + frontClearHalf
+  const arcSpan = Math.PI * 2 - frontClearHalf * 2
+  const clusterCount = 7
+  for (let i = 1; i < clusterCount; i++) {
+    const angle = (arcStart + (arcSpan / clusterCount) * i) % (Math.PI * 2)
+    const x = Math.cos(angle) * outerRadius
+    const z = Math.sin(angle) * outerRadius
     const numBalloons = 3 + Math.floor(Math.random() * 3)
     for (let i = 0; i < numBalloons; i++) {
       const color = PARTY_COLORS[Math.floor(Math.random() * PARTY_COLORS.length)]
       const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.3, metalness: 0.1 })
       const bGroup = new THREE.Group()
-      
+
       const mesh = new THREE.Mesh(balloonGeo, mat)
       mesh.scale.set(0.6, 0.75, 0.6) // elongated shape
       bGroup.add(mesh)
-      
+
       const knot = new THREE.Mesh(knotGeo, mat)
       knot.position.y = -0.8
       bGroup.add(knot)
@@ -173,8 +293,8 @@ function buildDecorations(scene, PARTY_COLORS) {
       ])
       bGroup.add(new THREE.Line(stringGeo, stringMat))
 
-      const bx = center.x + (Math.random() - 0.5) * 1.5
-      const bz = center.z + (Math.random() - 0.5) * 1.5
+      const bx = x + (Math.random() - 0.5) * 1.5
+      const bz = z + (Math.random() - 0.5) * 1.5
       const by = 2.0 + Math.random() * 2.5
 
       bGroup.position.set(bx, by - 6, bz) // Hidden
@@ -182,35 +302,9 @@ function buildDecorations(scene, PARTY_COLORS) {
       scene.add(bGroup)
       balloons.push(bGroup)
     }
-  })
+  }
 
-  // 2. Gift Boxes (outer ring, away from cake)
-  const boxCenters = [
-    { x: -3.5, z: -2.5 }, { x: -4.5, z: 0.5 },
-    { x: 3.5, z: -2.0 }, { x: 4.5, z: 1.0 },
-    { x: -2.0, z: -3.0 }, { x: 2.5, z: -2.8 }
-  ]
-  boxCenters.forEach(pos => {
-    const size = 0.5 + Math.random() * 0.6
-    const boxGeo = new THREE.BoxGeometry(size, size, size)
-    const color = PARTY_COLORS[Math.floor(Math.random() * PARTY_COLORS.length)]
-    const boxMat = new THREE.MeshStandardMaterial({ color, roughness: 0.8 })
-    const box = new THREE.Mesh(boxGeo, boxMat)
-    
-    // Ribbon
-    const ribbonMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 })
-    const ribbonV = new THREE.Mesh(new THREE.BoxGeometry(size + 0.02, size + 0.02, size * 0.2), ribbonMat)
-    const ribbonH = new THREE.Mesh(new THREE.BoxGeometry(size * 0.2, size + 0.02, size + 0.02), ribbonMat)
-    box.add(ribbonV, ribbonH)
-    
-    box.position.set(pos.x, size/2 - 5, pos.z) // Hidden
-    box.userData = { targetY: size/2 }
-    box.rotation.y = Math.random() * Math.PI
-    scene.add(box)
-    gifts.push(box)
-  })
-
-  // 3. Fairy Lights
+  // 2. Fairy Lights
   const fairyLightsGroup = new THREE.Group()
   fairyLightsGroup.position.y = 8 // Hidden high up
   fairyLightsGroup.visible = false
@@ -235,7 +329,7 @@ function buildDecorations(scene, PARTY_COLORS) {
     fairyLightsGroup.add(bulb)
   }
 
-  // 4. Party Flags (Bunting)
+  // 3. Party Flags (Bunting)
   const flagsGroup = new THREE.Group()
   flagsGroup.position.y = 8 // Hidden high up
   flagsGroup.visible = false
@@ -263,138 +357,8 @@ function buildDecorations(scene, PARTY_COLORS) {
     flagsGroup.add(flag)
   }
 
-  // 5. Teddy Bear (only decoration item beside cake)
-  const beigeMat = new THREE.MeshStandardMaterial({ color: 0xf5f5dc, roughness: 0.9 })
-  const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 })
-  const goldMat = new THREE.MeshStandardMaterial({ color: 0xffdfa0, roughness: 0.2, metalness: 0.8 })
-
-  // Teddy Bear (left side, outside clear radius around cake)
-  const creamMat = new THREE.MeshStandardMaterial({ color: 0xfff5e6, roughness: 0.85, metalness: 0.0 })
-  const darkBrownMat = new THREE.MeshStandardMaterial({ color: 0x4a3728, roughness: 0.7 })
-  const pinkMat = new THREE.MeshStandardMaterial({ color: 0xffb6c1, roughness: 0.6 })
-  function createTeddyBear(x, z, rotY) {
-    const group = new THREE.Group()
-    
-    // Body (sitting pose - wider, shorter)
-    const bodyGeo = new THREE.SphereGeometry(0.5, 20, 20)
-    const body = new THREE.Mesh(bodyGeo, creamMat)
-    body.scale.set(1.1, 0.9, 0.9)
-    body.position.y = 0.35
-    
-    // Tummy patch
-    const tummyGeo = new THREE.SphereGeometry(0.3, 16, 16)
-    const tummy = new THREE.Mesh(tummyGeo, beigeMat)
-    tummy.scale.set(1.0, 0.7, 0.6)
-    tummy.position.set(0, 0.3, 0.35)
-    group.add(tummy)
-    
-    // Head (slightly larger)
-    const headGeo = new THREE.SphereGeometry(0.4, 20, 20)
-    const head = new THREE.Mesh(headGeo, creamMat)
-    head.position.set(0, 0.95, 0.05)
-    
-    // Ears (round, cute)
-    const earGeo = new THREE.SphereGeometry(0.15, 16, 16)
-    const earL = new THREE.Mesh(earGeo, creamMat)
-    earL.position.set(-0.3, 1.2, 0.05)
-    const earR = new THREE.Mesh(earGeo, creamMat)
-    earR.position.set(0.3, 1.2, 0.05)
-    // Inner ears
-    const innerEarGeo = new THREE.SphereGeometry(0.08, 12, 12)
-    const innerEarL = new THREE.Mesh(innerEarGeo, pinkMat)
-    innerEarL.position.set(-0.3, 1.18, 0.12)
-    const innerEarR = new THREE.Mesh(innerEarGeo, pinkMat)
-    innerEarR.position.set(0.3, 1.18, 0.12)
-    
-    // Snout (cute, slightly protruding)
-    const snoutGeo = new THREE.SphereGeometry(0.18, 16, 16)
-    const snout = new THREE.Mesh(snoutGeo, beigeMat)
-    snout.position.set(0, 0.88, 0.35)
-    snout.scale.set(1.1, 0.8, 0.9)
-    
-    // Nose (small dark triangle)
-    const noseGeo = new THREE.SphereGeometry(0.05, 8, 8)
-    const nose = new THREE.Mesh(noseGeo, darkBrownMat)
-    nose.position.set(0, 0.92, 0.45)
-    nose.scale.set(1, 0.8, 0.8)
-    
-    // Eyes (dark, shiny)
-    const eyeGeo = new THREE.SphereGeometry(0.05, 8, 8)
-    const eyeMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.2, metalness: 0.3 })
-    const eyeL = new THREE.Mesh(eyeGeo, eyeMat)
-    eyeL.position.set(-0.15, 0.98, 0.32)
-    const eyeR = new THREE.Mesh(eyeGeo, eyeMat)
-    eyeR.position.set(0.15, 0.98, 0.32)
-    // Eye shine
-    const shineGeo = new THREE.SphereGeometry(0.015, 6, 6)
-    const shineMat = new THREE.MeshBasicMaterial({ color: 0xffffff })
-    const shineL = new THREE.Mesh(shineGeo, shineMat)
-    shineL.position.set(-0.12, 1.0, 0.36)
-    const shineR = new THREE.Mesh(shineGeo, shineMat)
-    shineR.position.set(0.18, 1.0, 0.36)
-    
-    // Arms (sitting pose - resting on lap)
-    const armGeo = new THREE.CapsuleGeometry(0.13, 0.25, 12, 12)
-    const armL = new THREE.Mesh(armGeo, creamMat)
-    armL.position.set(-0.45, 0.5, 0.2)
-    armL.rotation.z = 0.3
-    armL.rotation.x = 0.8
-    const armR = new THREE.Mesh(armGeo, creamMat)
-    armR.position.set(0.45, 0.5, 0.2)
-    armR.rotation.z = -0.3
-    armR.rotation.x = 0.8
-    
-    // Legs (sitting pose - extended forward)
-    const legGeo = new THREE.CapsuleGeometry(0.15, 0.2, 12, 12)
-    const legL = new THREE.Mesh(legGeo, creamMat)
-    legL.position.set(-0.3, 0.15, 0.45)
-    legL.rotation.x = -0.5
-    legL.rotation.z = 0.2
-    const legR = new THREE.Mesh(legGeo, creamMat)
-    legR.position.set(0.3, 0.15, 0.45)
-    legR.rotation.x = -0.5
-    legR.rotation.z = -0.2
-    // Paw pads
-    const padGeo = new THREE.SphereGeometry(0.05, 8, 8)
-    const padMat = new THREE.MeshStandardMaterial({ color: 0xffd1dc, roughness: 0.7 })
-    const padL = new THREE.Mesh(padGeo, padMat)
-    padL.position.set(-0.3, 0.08, 0.6)
-    padL.scale.set(1, 0.5, 0.8)
-    const padR = new THREE.Mesh(padGeo, padMat)
-    padR.position.set(0.3, 0.08, 0.6)
-    padR.scale.set(1, 0.5, 0.8)
-    
-    // Small ribbon bow tie
-    const bowGeo = new THREE.BoxGeometry(0.2, 0.06, 0.06)
-    const bowMat = new THREE.MeshStandardMaterial({ color: 0xff6b8a, roughness: 0.4 })
-    const bow = new THREE.Mesh(bowGeo, bowMat)
-    bow.position.set(0, 0.65, 0.35)
-    const bowL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 0.04), bowMat)
-    bowL.position.set(-0.12, 0.65, 0.35)
-    bowL.rotation.z = 0.3
-    const bowR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 0.04), bowMat)
-    bowR.position.set(0.12, 0.65, 0.35)
-    bowR.rotation.z = -0.3
-    
-    group.add(body, head, earL, earR, innerEarL, innerEarR)
-    group.add(snout, nose, eyeL, eyeR, shineL, shineR)
-    group.add(armL, armR, legL, legR, padL, padR)
-    group.add(bow, bowL, bowR)
-    
-    const targetY = 0
-    group.position.set(x, targetY - 5, z)
-    group.rotation.y = rotY
-    group.userData = { targetY }
-    scene.add(group)
-    feminineItems.push(group)
-  }
-  // Left side, outside clear radius around cake
-  createTeddyBear(-3.0, 1.5, 0.6)
-
   return {
     reveal() {
-      gifts.forEach((box, i) => gsap.to(box.position, { y: box.userData.targetY, duration: 1.2, delay: 0.4 + i * 0.1, ease: 'back.out(1.5)' }))
-      feminineItems.forEach((item, i) => gsap.to(item.position, { y: item.userData.targetY, duration: 1.2, delay: 0.5 + i * 0.08, ease: 'back.out(1.5)' }))
       balloons.forEach((b, i) => gsap.to(b.position, { y: b.userData.targetY, duration: 1.5, delay: 0.6 + i * 0.05, ease: 'back.out(1.2)' }))
       fairyLightsGroup.visible = true
       flagsGroup.visible = true

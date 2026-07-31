@@ -123,6 +123,7 @@ export function createSpark(scene) {
 
   var trailIdx = 0
   var active = false
+  var hasMoved = false
   var lastPos = new THREE.Vector3()
   var moveDir = new THREE.Vector3(0, 0, 1)
 
@@ -131,6 +132,7 @@ export function createSpark(scene) {
     sparkSprite.visible = true
     trailPoints.visible = true
     active = true
+    hasMoved = false
     lastPos.copy(startPos)
     if (initialDir) moveDir.copy(initialDir).normalize()
     for (var i = 0; i < TRAIL_COUNT; i++) trailAges[i] = 999
@@ -171,15 +173,28 @@ export function createSpark(scene) {
 
     var currentPos = sparkSprite.position
 
-    moveDir.subVectors(currentPos, lastPos)
-    if (moveDir.lengthSq() > 0.0001) {
-      moveDir.normalize()
+    // Detect first movement — clear old particles so no stationary blob
+    if (!hasMoved) {
+      if (currentPos.distanceToSquared(lastPos) > 0.0001) {
+        hasMoved = true
+        for (var i = 0; i < TRAIL_COUNT; i++) trailAges[i] = 999
+      }
+    }
+
+    const newDir = new THREE.Vector3().subVectors(currentPos, lastPos)
+    if (newDir.lengthSq() > 0.0001) {
+      newDir.normalize()
+      // Smooth the direction so the tail stays a single coherent stream
+      // behind the head instead of flicking between frames.
+      moveDir.lerp(newDir, 0.45)
+      if (moveDir.lengthSq() > 0.0001) moveDir.normalize()
     }
     lastPos.copy(currentPos)
   }
 
   function updateParticles(delta, time) {
-    if (!active) return;
+    // Don't emit until the spark is actually moving
+    if (!active || !hasMoved) return;
 
     const currentPos = sparkSprite.position;
     const tPos = trailGeo.attributes.position.array;
@@ -191,7 +206,7 @@ export function createSpark(scene) {
     // Update existing particles
     for (let k = 0; k < TRAIL_COUNT; k++) {
       if (tAges[k] < 999) {
-        tAges[k] += delta / 0.5; // Lifetime: 0.5s (longer tail)
+        tAges[k] += delta / 0.25; // Lifetime: 0.25s — quick fade on direction change
 
         if (tAges[k] >= 1.0) {
           tAges[k] = 999;
@@ -202,10 +217,7 @@ export function createSpark(scene) {
         tPos[k * 3 + 1] += tVel[k * 3 + 1];
         tPos[k * 3 + 2] += tVel[k * 3 + 2];
 
-        // Turbulence (reduced for cleaner tail)
-        const turbulence = Math.sin(time * 20 + k * 0.7) * 0.003
-        tPos[k * 3 + 0] += turbulence
-        tPos[k * 3 + 1] += turbulence * 0.5
+        // No turbulence — keeps tail perfectly straight
 
         // Color transition: White/Yellow -> Orange -> Red -> Dark Red
         const p = tAges[k];
@@ -231,26 +243,21 @@ export function createSpark(scene) {
       }
     }
 
-    // Emit 10 particles per frame for dense meteor tail
-    for (let e = 0; e < 10; e++) {
+    // Emit 4 particles per frame — tight single-file tail
+    for (let e = 0; e < 4; e++) {
       trailIdx = (trailIdx + 1) % TRAIL_COUNT;
 
-      // Spawn position: slightly behind the head, tight cluster
-      tPos[trailIdx * 3 + 0] = currentPos.x - moveDir.x * 0.02 + (Math.random() - 0.5) * 0.008;
-      tPos[trailIdx * 3 + 1] = currentPos.y - moveDir.y * 0.02 + (Math.random() - 0.5) * 0.008;
-      tPos[trailIdx * 3 + 2] = currentPos.z - moveDir.z * 0.02 + (Math.random() - 0.5) * 0.008;
+      // Spawn position: strictly behind the head
+      tPos[trailIdx * 3 + 0] = currentPos.x - moveDir.x * 0.04;
+      tPos[trailIdx * 3 + 1] = currentPos.y - moveDir.y * 0.04;
+      tPos[trailIdx * 3 + 2] = currentPos.z - moveDir.z * 0.04;
 
-      const speed = 0.06 + Math.random() * 0.04;
+      const speed = 0.12 + Math.random() * 0.02;
 
-      // 95% of particles strictly behind the head; 5% can have slight variation
-      const backwardBias = Math.random() < 0.95 ? 1.0 : 0.5;
-
-      // Sideways spread reduced by ~50% vs original
-      const sidewaysSpread = 0.008;
-
-      tVel[trailIdx * 3 + 0] = -moveDir.x * speed * backwardBias + (Math.random() - 0.5) * sidewaysSpread;
-      tVel[trailIdx * 3 + 1] = -moveDir.y * speed * backwardBias + (Math.random() - 0.5) * sidewaysSpread;
-      tVel[trailIdx * 3 + 2] = -moveDir.z * speed * backwardBias + (Math.random() - 0.5) * sidewaysSpread;
+      // All particles: purely backward, ZERO spread — straight line only
+      tVel[trailIdx * 3 + 0] = -moveDir.x * speed;
+      tVel[trailIdx * 3 + 1] = -moveDir.y * speed;
+      tVel[trailIdx * 3 + 2] = -moveDir.z * speed;
 
       tAges[trailIdx] = 0;
       tSizes[trailIdx] = 3 + Math.random() * 4; // compact particles

@@ -101,23 +101,13 @@ export function runCinematic(ctx) {
   // Spark flight duration: 2 seconds shorter than fr.wav for fast comet
   const flightDuration = Math.max(frDuration - 2.0, 1.5)
 
-  // Brief 0.15s camera transition to smoothly catch up to the spark start
-  tl.to(camera.position, {
-    x: camTarget.x,
-    y: camTarget.y,
-    z: camTarget.z,
-    duration: 0.15,
-    ease: 'power2.out',
-    onUpdate() {
-      camera.lookAt(sparkStart)
-    },
-  })
+  // ── Set camera position IMMEDIATELY (no transition delay) ──────────
+  // Camera starts above and behind the spark on the exact same frame
+  camera.position.set(camTarget.x, camTarget.y, camTarget.z)
+  camera.lookAt(sparkStart)
 
-  // ——————————————————————————————————————————————
-  // PHASE A  (0 → flightDuration):  CatmullRomCurve Flight
-  // Spark reaches candle exactly when fr.wav finishes
-  // Camera stays above and behind, avoiding all scene objects
-  // ——————————————————————————————————————————————
+  // ── Spark flight + camera follow start on the SAME FRAME ────────────
+  // No delay, no transition, no onComplete — everything begins immediately
   const pathData = { progress: 0 }
   
   tl.to(pathData, {
@@ -130,12 +120,13 @@ export function runCinematic(ctx) {
       // Get position along curve
       const pos = sparkCurve.getPoint(p)
       
-      // Subtle magical randomness
-      const noise = (Math.random() - 0.5) * 0.08
-      
-      sparkProxy.x = pos.x + noise
-      sparkProxy.y = pos.y + noise
-      sparkProxy.z = pos.z + noise
+      // Smooth, low-frequency wobble — no per-frame randomness, otherwise the
+      // random jitter dominates the per-frame delta and the tail sprays out
+      // in many directions instead of trailing behind the flight.
+      const wobble = Math.sin(p * Math.PI * 12 + 1.7) * 0.015
+      sparkProxy.x = pos.x + wobble
+      sparkProxy.y = pos.y + Math.sin(p * Math.PI * 10) * 0.01
+      sparkProxy.z = pos.z - wobble
 
       // Move spark
       spark.mesh.position.set(sparkProxy.x, sparkProxy.y, sparkProxy.z)
