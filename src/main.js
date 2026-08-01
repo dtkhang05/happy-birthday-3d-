@@ -147,20 +147,6 @@ async function main() {
   ui.onReady(() => {
     phase1Active = false
 
-    // ── FULLSCREEN (Android hides the browser URL bar) ────────────
-    // iOS Safari ignores this silently, so the PWA "Add to Home Screen"
-    // path is the fix there.
-    const rootEl = document.documentElement
-    try {
-      if (rootEl.requestFullscreen) {
-        rootEl.requestFullscreen().catch(() => {})
-      } else if (rootEl.webkitRequestFullscreen) {
-        rootEl.webkitRequestFullscreen()
-      }
-    } catch (e) {
-      /* fullscreen unsupported — ignore */
-    }
-
     // ── PLAY SOUND + LAUNCH FIREBALL ON THE SAME FRAME ─────
     // Resume the AudioContext on this user gesture so the ignition sound
     // plays immediately (mobile browsers keep the context suspended until
