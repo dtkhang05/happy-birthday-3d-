@@ -3,7 +3,7 @@
  */
 import * as THREE from 'three'
 import gsap from 'gsap'
-import { initScene, initComposer } from './scene.js'
+import { initScene, initComposer, detectDeviceQuality } from './scene.js'
 import { initCamera, enableOrbitControls } from './camera.js'
 import { loadCake } from './cake.js'
 import { createSpark } from './spark.js'
@@ -43,13 +43,14 @@ async function main() {
   createVignette(app)
 
   // ── Scene + Renderer ─────────────────────────────────────────────
-  const { scene, renderer } = initScene(app)
+  const quality = detectDeviceQuality()
+  const { scene, renderer } = initScene(app, quality)
 
   // ── Camera + Controls ────────────────────────────────────────────
   const { camera, controls } = initCamera(renderer)
 
   // ── Post-processing ──────────────────────────────────────────────
-  const { composer, bloomPass, bokehPass } = initComposer(renderer, scene, camera)
+  const { composer, bloomPass, bokehPass } = initComposer(renderer, scene, camera, quality)
 
   // ── Load Cake ────────────────────────────────────────────────────
   const loadingFill = document.getElementById('loading-fill')
