@@ -11,23 +11,43 @@ import { BokehPass } from 'three/addons/postprocessing/BokehPass.js'
 
 /**
  * Detects the device and returns quality settings so expensive effects are
- * dialed down automatically on phones/tablets while desktops keep the full
- * look (bloom + Bokeh DOF + shadows).
+ * dialed down automatically on phones/tablets/weak laptops while capable
+ * desktops keep the full look (bloom + Bokeh DOF + shadows).
+ *
+ * Override for testing: append ?quality=high or ?quality=low to the URL.
  */
 export function detectDeviceQuality() {
+  const forced = new URLSearchParams(window.location.search).get('quality')
+
   const isMobile =
     (typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches) ||
     /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '')
-  const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2)
-  return {
+
+  const weakLaptop =
+    !isMobile &&
+    ((navigator.hardwareConcurrency || 8) < 4 ||
+      (typeof navigator.deviceMemory === 'number' && navigator.deviceMemory < 4))
+
+  let level = isMobile ? 'mobile' : weakLaptop ? 'low' : 'high'
+  if (forced === 'high') level = 'high'
+  if (forced === 'low') level = 'low'
+
+  const pixelRatio = Math.min(window.devicePixelRatio || 1, level === 'high' ? 2 : 1.5)
+
+  const quality = {
     isMobile,
-    pixelRatio: dpr,
-    shadows: !isMobile,
-    bokeh: { enabled: !isMobile, aperture: 0.0001, maxblur: 0.008 },
-    bloom: isMobile
-      ? { strength: 0.8, radius: 0.4, threshold: 0.25 }
-      : { strength: 1.4, radius: 0.5, threshold: 0.25 },
+    level,
+    pixelRatio,
+    shadows: level === 'high',
+    bokeh: { enabled: level === 'high', aperture: 0.0001, maxblur: 0.008 },
+    bloom:
+      level === 'high'
+        ? { strength: 1.4, radius: 0.5, threshold: 0.25 }
+        : { strength: 1.0, radius: 0.45, threshold: 0.25 },
   }
+
+  if (forced) console.log(`[quality] forced=${forced} → level=${level}`)
+  return quality
 }
 
 /**
