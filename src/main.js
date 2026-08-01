@@ -82,6 +82,18 @@ async function main() {
   const listener = new THREE.AudioListener()
   camera.add(listener)
 
+  // Pre-warm the AudioContext on the FIRST interaction anywhere on the
+  // page (scroll/tap/key). By the time READY is pressed the context is
+  // already running, so the ignition sound starts with zero delay.
+  const warmUpAudio = () => {
+    const audioCtx = listener.context
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(() => {})
+    }
+  }
+  window.addEventListener('pointerdown', warmUpAudio, { once: true })
+  window.addEventListener('keydown', warmUpAudio, { once: true })
+
   const audioLoader = new THREE.AudioLoader()
 
   // Load fr.wav (spark sound)
@@ -148,15 +160,12 @@ async function main() {
     phase1Active = false
 
     // ── PLAY SOUND + LAUNCH FIREBALL ON THE SAME FRAME ─────
-    // Resume the AudioContext on this user gesture so the ignition sound
-    // plays immediately (mobile browsers keep the context suspended until
-    // a gesture resumes it, otherwise the sound is delayed).
-    async function playIgnitionSound() {
+    // Resume the AudioContext synchronously and play right away — no
+    // awaiting, so the ignition sound starts in the same click tick.
+    function playIgnitionSound() {
       const audioCtx = listener.context
-      if (audioCtx && audioCtx.state === 'suspended') {
-        try { await audioCtx.resume() } catch (e) {}
-      }
       try {
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume()
         if (frAudio.buffer) frAudio.play()
       } catch (e) {
         console.warn('Could not play fr.wav:', e)
