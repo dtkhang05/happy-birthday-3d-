@@ -21,10 +21,12 @@ export function detectDeviceQuality() {
 
   const isMobile =
     (typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches) ||
-    /Android|iPhone|iPad|iPod|Mobile/i.test(ua)
+    /Android|iPhone|iPad|iPod|Mobile/i.test(ua) ||
+    (typeof navigator.maxTouchPoints === 'number' && navigator.maxTouchPoints > 1)
 
-  // Firefox family (incl. Zen) has slower WebGL; Cốc Cốc adds background load.
-  const weakBrowser = !isMobile && /Firefox|CocCoc/i.test(ua)
+  // Firefox family (incl. Zen) and Cốc Cốc have weaker/loaded WebGL —
+  // reduce on desktop AND phone so those browsers stay smooth.
+  const weakBrowser = /Firefox|CocCoc/i.test(ua)
 
   const weakLaptop =
     !isMobile &&

@@ -114,7 +114,7 @@ async function main() {
     const hpbdBuffer = await audioLoader.loadAsync('audio/hpbd.mp3')
     hpbdAudio.setBuffer(hpbdBuffer)
     hpbdAudio.setVolume(0)
-    hpbdAudio.setLoop(true)
+    hpbdAudio.setLoop(false) // play the birthday song once, not on repeat
   } catch (err) {
     console.warn('Failed to load hpbd.mp3:', err)
   }
