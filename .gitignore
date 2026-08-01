@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.vite/
+
+*.log
+.DS_Store
+
+# Redundant root copy — the app loads /birthday_cake.glb from public/
+/birthday_cake.glb

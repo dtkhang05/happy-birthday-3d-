@@ -269,6 +269,9 @@ function buildDecorations(scene, PARTY_COLORS) {
   const arcSpan = Math.PI * 2 - frontClearHalf * 2
   const clusterCount = 7
   for (let i = 1; i < clusterCount; i++) {
+    // Skip the two far-side clusters (≈ 249° and 291°) that sit behind the
+    // cake, near the fairy-light strings — they cover the lights.
+    if (i === 3 || i === 4) continue
     const angle = (arcStart + (arcSpan / clusterCount) * i) % (Math.PI * 2)
     const x = Math.cos(angle) * outerRadius
     const z = Math.sin(angle) * outerRadius
@@ -295,7 +298,8 @@ function buildDecorations(scene, PARTY_COLORS) {
 
       const bx = x + (Math.random() - 0.5) * 1.5
       const bz = z + (Math.random() - 0.5) * 1.5
-      const by = 2.0 + Math.random() * 2.5
+      // Float the clusters above the fairy-light string (y ≈ 4.0–5.5).
+      const by = 3.6 + Math.random() * 1.6
 
       bGroup.position.set(bx, by - 6, bz) // Hidden
       bGroup.userData = { targetY: by, phaseOffset: Math.random() * Math.PI * 2, speed: 0.8 + Math.random() * 0.5 }

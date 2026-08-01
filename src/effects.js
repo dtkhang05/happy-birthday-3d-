@@ -77,48 +77,78 @@ export function createHappyBirthdayText(scene) {
   canvas.height = 600
   const ctx = canvas.getContext('2d')
 
-  // Draw texts
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  
   const text1 = 'HAPPY BIRTHDAY'
   const text2 = 'Thanh Tuyền'
   const cx = canvas.width / 2
   const cy1 = canvas.height * 0.38
   const cy2 = canvas.height * 0.75
 
-  // ── Line 1: HAPPY BIRTHDAY ─────────────────────────────────────────
-  ctx.font = 'bold 130px "Outfit", Arial, sans-serif'
-  ctx.fillStyle = '#ffffff'
-  
-  // Base glow
-  ctx.shadowColor = 'rgba(255, 150, 80, 0.6)'
-  ctx.shadowBlur = 20
-  ctx.fillText(text1, cx, cy1)
-  
-  // Outer glow
-  ctx.shadowColor = 'rgba(255, 100, 50, 0.5)'
-  ctx.shadowBlur = 50
-  ctx.fillText(text1, cx, cy1)
-
-  // ── Line 2: Thanh Tuyền ─────────────────────────────────────────────
-  // ~92% size of line 1 (130px) — increased ~22%
-  ctx.font = '700 120px "Dancing Script", cursive'
-  ctx.fillStyle = '#ff4d6d' // vivid pinkish-red
-  
-  // Base glow (softer)
-  ctx.shadowColor = 'rgba(255, 77, 109, 0.5)'
-  ctx.shadowBlur = 12
-  ctx.fillText(text2, cx, cy2)
-  
-  // Outer glow (softer)
-  ctx.shadowColor = 'rgba(255, 77, 109, 0.3)'
-  ctx.shadowBlur = 25
-  ctx.fillText(text2, cx, cy2)
-
   const tex = new THREE.CanvasTexture(canvas)
   tex.colorSpace = THREE.SRGBColorSpace
+
+  // Draws both lines. Called once now, and again once the webfonts finish
+  // loading so the Vietnamese "ề" renders with the real font.
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+
+    // ── Line 1: HAPPY BIRTHDAY ─────────────────────────────────────────
+    ctx.font = 'bold 130px "Outfit", Arial, sans-serif'
+    ctx.fillStyle = '#ffffff'
+
+    // Base glow
+    ctx.shadowColor = 'rgba(255, 150, 80, 0.6)'
+    ctx.shadowBlur = 20
+    ctx.fillText(text1, cx, cy1)
+
+    // Outer glow
+    ctx.shadowColor = 'rgba(255, 100, 50, 0.5)'
+    ctx.shadowBlur = 50
+    ctx.fillText(text1, cx, cy1)
+
+    // ── Line 2: Thanh Tuyền ─────────────────────────────────────────────
+    // Great Vibes is a Vietnamese-capable calligraphy font, so "ề" renders
+    // correctly. A shear transform adds an extra italic slant. Glossy red
+    // gradient + neon red glow make the name pop against the balloons.
+    ctx.font = '150px "Great Vibes", cursive'
+
+    const skew = 0.18 // italic slant (tan ≈ 10°), sheared about the text center
+    ctx.save()
+    ctx.translate(cx, cy2)
+    ctx.transform(1, 0, skew, 1, 0, 0)
+    ctx.translate(-cx, -cy2)
+
+    // Red halo behind the letters (separates them from the balloons)
+    ctx.shadowColor = 'rgba(255, 40, 60, 0.85)'
+    ctx.shadowBlur = 45
+    ctx.fillText(text2, cx, cy2)
+
+    // Tight bright-red glow
+    ctx.shadowColor = 'rgba(255, 120, 130, 0.9)'
+    ctx.shadowBlur = 12
+    ctx.fillText(text2, cx, cy2)
+
+    // Crisp glossy-red core (no shadow) so the glyphs stay sharp red
+    const red = ctx.createLinearGradient(cx, cy2 - 100, cx, cy2 + 100)
+    red.addColorStop(0, '#ff9a9a')
+    red.addColorStop(0.45, '#ff2a3c')
+    red.addColorStop(1, '#c4001e')
+    ctx.fillStyle = red
+    ctx.shadowColor = 'rgba(255, 255, 255, 0)'
+    ctx.shadowBlur = 0
+    ctx.fillText(text2, cx, cy2)
+
+    ctx.restore()
+
+    tex.needsUpdate = true
+  }
+
+  draw()
+  // Request the fonts explicitly, then redraw once they are ready.
+  document.fonts.load('bold 130px "Outfit"', text1).catch(() => {})
+  document.fonts.load('150px "Great Vibes"', text2).catch(() => {})
+  document.fonts.ready.then(draw)
 
   const mat = new THREE.SpriteMaterial({
     map: tex,

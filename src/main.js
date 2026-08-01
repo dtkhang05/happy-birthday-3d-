@@ -28,6 +28,17 @@ import { setupDecorations } from './decorations.js'
 async function main() {
   const app = document.getElementById('app')
 
+  // ── Rotate-to-landscape hint (portrait phones only) ────────────────
+  const rotateOverlay = document.getElementById('rotate-overlay')
+  const portraitQuery = window.matchMedia('(orientation: portrait) and (max-width: 820px)')
+  function updateRotateOverlay() {
+    if (rotateOverlay) rotateOverlay.hidden = !portraitQuery.matches
+  }
+  if (portraitQuery.addEventListener) {
+    portraitQuery.addEventListener('change', updateRotateOverlay)
+  }
+  updateRotateOverlay()
+
   // ── Vignette (pure CSS, behind everything) ───────────────────────
   createVignette(app)
 
