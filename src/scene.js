@@ -10,23 +10,41 @@ import { FXAAShader } from 'three/addons/shaders/FXAAShader.js'
 import { BokehPass } from 'three/addons/postprocessing/BokehPass.js'
 
 /**
- * Detects the device and returns quality settings so expensive effects are
- * dialed down automatically on phones/tablets while desktops keep the full
- * look (bloom + Bokeh DOF + shadows).
+ * Detects the device + browser and returns quality settings so expensive
+ * effects are dialed down automatically where performance is likely weak:
+ * phones/tablets, Firefox-family browsers (Firefox, Zen), Cốc Cốc, and
+ * low-end laptops. Capable Chrome/Edge/Safari desktops keep the full look
+ * (bloom + Bokeh DOF + shadows).
  */
 export function detectDeviceQuality() {
+  const ua = navigator.userAgent || ''
+
   const isMobile =
     (typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches) ||
-    /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '')
-  const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2)
+    /Android|iPhone|iPad|iPod|Mobile/i.test(ua)
+
+  // Firefox family (incl. Zen) has slower WebGL; Cốc Cốc adds background load.
+  const weakBrowser = !isMobile && /Firefox|CocCoc/i.test(ua)
+
+  const weakLaptop =
+    !isMobile &&
+    ((navigator.hardwareConcurrency || 8) < 4 ||
+      (typeof navigator.deviceMemory === 'number' && navigator.deviceMemory < 4))
+
+  const reduced = isMobile || weakBrowser || weakLaptop
+  const dpr = Math.min(window.devicePixelRatio || 1, reduced ? 1.5 : 2)
+
   return {
     isMobile,
+    reduced,
     pixelRatio: dpr,
-    shadows: !isMobile,
-    bokeh: { enabled: !isMobile, aperture: 0.0001, maxblur: 0.008 },
+    shadows: !reduced,
+    bokeh: { enabled: !reduced, aperture: 0.0001, maxblur: 0.008 },
     bloom: isMobile
       ? { strength: 0.8, radius: 0.4, threshold: 0.25 }
-      : { strength: 1.4, radius: 0.5, threshold: 0.25 },
+      : reduced
+        ? { strength: 1.0, radius: 0.45, threshold: 0.25 }
+        : { strength: 1.4, radius: 0.5, threshold: 0.25 },
   }
 }
 
