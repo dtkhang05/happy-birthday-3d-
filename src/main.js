@@ -147,14 +147,21 @@ async function main() {
     phase1Active = false
 
     // ── PLAY SOUND + LAUNCH FIREBALL ON THE SAME FRAME ─────
-    // Play ignition sound IMMEDIATELY on click (buffer preloaded)
-    try {
-      if (frAudio.buffer) {
-        frAudio.play()
+    // Resume the AudioContext on this user gesture so the ignition sound
+    // plays immediately (mobile browsers keep the context suspended until
+    // a gesture resumes it, otherwise the sound is delayed).
+    async function playIgnitionSound() {
+      const audioCtx = listener.context
+      if (audioCtx && audioCtx.state === 'suspended') {
+        try { await audioCtx.resume() } catch (e) {}
       }
-    } catch (e) {
-      console.warn('Could not play fr.wav:', e)
+      try {
+        if (frAudio.buffer) frAudio.play()
+      } catch (e) {
+        console.warn('Could not play fr.wav:', e)
+      }
     }
+    playIgnitionSound()
 
     // Position the spark at the button's world position
     const forward = new THREE.Vector3()
