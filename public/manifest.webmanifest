@@ -1,0 +1,17 @@
+{
+  "name": "Happy Birthday",
+  "short_name": "Birthday",
+  "description": "A magical interactive 3D birthday cinematic experience.",
+  "start_url": "/",
+  "display": "fullscreen",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
