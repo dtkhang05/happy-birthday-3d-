@@ -1847,24 +1847,89 @@ function createBouquet() {
 function createGreetingCard() {
   const g = new THREE.Group()
 
-  // Card standing upright, tilted back slightly
-  const cardMat = new THREE.MeshStandardMaterial({ color: 0xfff6ec, roughness: 0.8 })
-  const card = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.17, 0.015), cardMat)
+  // Card standing upright, tilted back slightly. Front face (+z) shows a
+  // printed birthday-card texture; the rest stays cream.
+  const creamMat = new THREE.MeshStandardMaterial({ color: 0xfff6ec, roughness: 0.8 })
+  const frontMat = new THREE.MeshBasicMaterial({ map: createCardFrontTexture() })
+  const card = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.17, 0.015), [
+    creamMat, creamMat, creamMat, creamMat, frontMat, creamMat,
+  ])
   card.position.y = 0.09
   card.rotation.x = -0.12
   g.add(card)
 
-  // Red heart on the front
-  const heartMat = new THREE.MeshStandardMaterial({ color: 0xff3355, roughness: 0.5 })
-  const heartShape = new THREE.Shape()
-  heartShape.moveTo(0, 0.05)
-  heartShape.bezierCurveTo(-0.075, 0.09, -0.075, -0.015, 0, -0.06)
-  heartShape.bezierCurveTo(0.075, -0.015, 0.075, 0.09, 0, 0.05)
-  const heart = new THREE.Mesh(new THREE.ShapeGeometry(heartShape), heartMat)
-  heart.position.set(0, 0.03, 0.01)
-  card.add(heart)
-
   return g
+}
+
+// Draws a small birthday-card front (pink bg, balloons, "Happy Birthday!",
+// mini cake) onto a canvas texture.
+function createCardFrontTexture() {
+  const W = 256
+  const H = 181
+  const c = document.createElement('canvas')
+  c.width = W
+  c.height = H
+  const ctx = c.getContext('2d')
+
+  // Background
+  const bg = ctx.createLinearGradient(0, 0, 0, H)
+  bg.addColorStop(0, '#ffe9f1')
+  bg.addColorStop(1, '#ffcfe0')
+  ctx.fillStyle = bg
+  ctx.fillRect(0, 0, W, H)
+
+  // Border
+  ctx.strokeStyle = '#e88fae'
+  ctx.lineWidth = 6
+  ctx.strokeRect(10, 10, W - 20, H - 20)
+
+  // Confetti dots
+  ctx.fillStyle = '#ff9ac2'
+  ;[[40, 40], [60, 24], [210, 36], [232, 60], [36, 152], [220, 152], [120, 20], [180, 168]].forEach(([x, y]) => {
+    ctx.beginPath()
+    ctx.arc(x, y, 4, 0, Math.PI * 2)
+    ctx.fill()
+  })
+
+  // Balloons in the top corners
+  function balloon(x, y, color) {
+    ctx.fillStyle = color
+    ctx.beginPath()
+    ctx.ellipse(x, y, 16, 20, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.strokeStyle = color
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(x, y + 20)
+    ctx.quadraticCurveTo(x + 8, y + 34, x - 4, y + 46)
+    ctx.stroke()
+  }
+  balloon(46, 52, '#ff6f91')
+  balloon(210, 50, '#7ed0ff')
+
+  // Text
+  ctx.textAlign = 'center'
+  ctx.fillStyle = '#c9416e'
+  ctx.font = 'bold 27px Arial, sans-serif'
+  ctx.fillText('Happy Birthday!', W / 2, 72)
+
+  // Mini two-tier cake
+  ctx.fillStyle = '#ff8fb1'
+  ctx.fillRect(W / 2 - 34, 150, 68, 16) // bottom tier
+  ctx.fillStyle = '#ff6f91'
+  ctx.fillRect(W / 2 - 24, 136, 48, 16) // top tier
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(W / 2 - 24, 133, 48, 5) // icing
+  ctx.fillStyle = '#ffd94d'
+  ctx.fillRect(W / 2 - 2, 114, 4, 20) // candle
+  ctx.fillStyle = '#ff8833'
+  ctx.beginPath()
+  ctx.arc(W / 2, 110, 5, 0, Math.PI * 2)
+  ctx.fill() // flame
+
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  return tex
 }
 
 // ── 20. Mini Handheld Electric Fan ──────────────────────────────────────────
